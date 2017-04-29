@@ -597,7 +597,7 @@ class LoggingEventHandler(FileSystemEventHandler):
         what = 'directory' if event.is_directory else 'file'
         logging.info("Modified %s: %s", what, event.src_path)
 
-    def on_close(self, event):
+    def on_closed(self, event):
         super(LoggingEventHandler, self).on_close(event)
 
         what = 'directory' if event.is_directory else 'file'
