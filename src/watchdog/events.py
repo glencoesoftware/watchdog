@@ -97,6 +97,7 @@ EVENT_TYPE_MOVED = 'moved'
 EVENT_TYPE_DELETED = 'deleted'
 EVENT_TYPE_CREATED = 'created'
 EVENT_TYPE_MODIFIED = 'modified'
+EVENT_TYPE_CLOSED = 'closed'
 
 
 class FileSystemEvent(object):
@@ -240,6 +241,25 @@ class FileMovedEvent(FileSystemMovedEvent):
                           dest_path=self.dest_path))
 
 
+class FileClosedEvent(FileSystemEvent):
+    """
+    File system event representing file closure on the file system. (inotify
+    only)
+    """
+
+    event_type = EVENT_TYPE_CLOSED
+
+    def __init__(self, src_path, closed_write):
+        super(FileClosedEvent, self).__init__(src_path)
+        self.closed_write = closed_write
+
+    def __repr__(self):
+        return ("<%(class_name)s: src_path=%(src_path)r, "
+                "closed_write=%(closed_write)r>"
+                ) % (dict(class_name=self.__class__.__name__,
+                          src_path=self.src_path,
+                          closed_write=self.closed_write))
+
 # Directory events.
 
 
@@ -325,6 +345,7 @@ class FileSystemEventHandler(object):
             EVENT_TYPE_MOVED: self.on_moved,
             EVENT_TYPE_CREATED: self.on_created,
             EVENT_TYPE_DELETED: self.on_deleted,
+            EVENT_TYPE_CLOSED: self.on_closed,
         }
         event_type = event.event_type
         _method_map[event_type](event)
@@ -367,6 +388,15 @@ class FileSystemEventHandler(object):
 
     def on_modified(self, event):
         """Called when a file or directory is modified.
+
+        :param event:
+            Event representing file/directory modification.
+        :type event:
+            :class:`DirModifiedEvent` or :class:`FileModifiedEvent`
+        """
+
+    def on_closed(self, event):
+        """Called when a file or directory is closed (inotify only).
 
         :param event:
             Event representing file/directory modification.
@@ -449,6 +479,7 @@ class PatternMatchingEventHandler(FileSystemEventHandler):
                 EVENT_TYPE_MOVED: self.on_moved,
                 EVENT_TYPE_CREATED: self.on_created,
                 EVENT_TYPE_DELETED: self.on_deleted,
+                EVENT_TYPE_CLOSED: self.on_closed,
             }
             event_type = event.event_type
             _method_map[event_type](event)
@@ -532,6 +563,7 @@ class RegexMatchingEventHandler(FileSystemEventHandler):
                 EVENT_TYPE_MOVED: self.on_moved,
                 EVENT_TYPE_CREATED: self.on_created,
                 EVENT_TYPE_DELETED: self.on_deleted,
+                EVENT_TYPE_CLOSED: self.on_closed,
             }
             event_type = event.event_type
             _method_map[event_type](event)
@@ -564,6 +596,12 @@ class LoggingEventHandler(FileSystemEventHandler):
 
         what = 'directory' if event.is_directory else 'file'
         logging.info("Modified %s: %s", what, event.src_path)
+
+    def on_close(self, event):
+        super(LoggingEventHandler, self).on_close(event)
+
+        what = 'directory' if event.is_directory else 'file'
+        logging.info("Closed %s: %s", what, event.src_path)
 
 
 class LoggingFileSystemEventHandler(LoggingEventHandler):

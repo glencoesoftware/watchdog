@@ -89,6 +89,7 @@ from watchdog.events import (
     FileModifiedEvent,
     FileMovedEvent,
     FileCreatedEvent,
+    FileClosedEvent,
     generate_sub_moved_events,
     generate_sub_created_events,
 )
@@ -174,6 +175,10 @@ class InotifyEmitter(EventEmitter):
                 cls = DirCreatedEvent if event.is_directory else FileCreatedEvent
                 self.queue_event(cls(src_path))
                 self.queue_event(DirModifiedEvent(os.path.dirname(src_path)))
+            elif (event.is_close_write or event.is_close_nowrite) \
+                    and not event.is_directory:
+                cls = FileClosedEvent
+                self.queue_event(cls(event.src_path, event.is_close_write))
 
     def _decode_path(self, path):
         """ Decode path only if unicode string was passed to this emitter. """

@@ -127,6 +127,7 @@ WATCHDOG_ALL_EVENTS = reduce(
         InotifyConstants.IN_MOVED_TO,
         InotifyConstants.IN_CREATE,
         InotifyConstants.IN_DELETE,
+        InotifyConstants.IN_CLOSE,
         InotifyConstants.IN_DELETE_SELF,
         InotifyConstants.IN_DONT_FOLLOW,
     ])
